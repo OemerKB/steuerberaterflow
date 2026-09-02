@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@sf/ui": ["../../packages/ui/index.js"],
+      "@sf/ui/*": ["../../packages/ui/src/*"]
+    }
+  }
+}

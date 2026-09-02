@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@steuerberaterflow/config/theme.css";
+@import "@steuerberaterflow/ui/styles.css";
+@source "../../../../packages/ui/src";
+@source "../";
+
+::selection {
+  background: #dcebdd;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
