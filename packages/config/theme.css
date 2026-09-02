@@ -1,0 +1,26 @@
+/* SteuerberaterFlow – gemeinsames Tailwind-v4-Theme (Design-Tokens). */
+
+@theme {
+  --color-background: #f6f7f5;
+  --color-card: #ffffff;
+  --color-foreground: #17211b;
+  --color-muted: #667069;
+  --color-primary: #176b4d;
+  --color-primary-hover: #11563d;
+  --color-accent: #dcebdd;
+  --color-accent-foreground: #11563d;
+  --color-border: #e2e7e3;
+  --color-warning: #d97706;
+  --color-warning-bg: #fdf3e3;
+  --color-danger: #c2413b;
+  --color-danger-bg: #fbeeed;
+  --color-info: #1d4ed8;
+  --color-info-bg: #eaf0fd;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --shadow-card: 0 1px 2px 0 rgb(23 33 27 / 0.05), 0 1px 3px 0 rgb(23 33 27 / 0.04);
+  --shadow-pop: 0 4px 16px 0 rgb(23 33 27 / 0.1);
+
+  --radius-card: 0.625rem;
+}

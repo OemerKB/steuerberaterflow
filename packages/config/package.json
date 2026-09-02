@@ -1,0 +1,12 @@
+{
+  "name": "@steuerberaterflow/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gemeinsame Konfiguration: ESLint-Preset, Tailwind-Theme, Konstanten",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./eslint": "./eslint.mjs",
+    "./theme.css": "./theme.css"
+  }
+}

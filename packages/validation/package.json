@@ -1,0 +1,13 @@
+{
+  "name": "@steuerberaterflow/validation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Zod-Schemas und Validierungen für alle Workspaces",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "zod": "^4.5.4"
+  }
+}
