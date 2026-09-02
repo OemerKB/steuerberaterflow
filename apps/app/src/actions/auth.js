@@ -23,7 +23,7 @@ export async function loginAction(prevState, formData) {
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for") || "";
-  const limit = rateLimit({ key: `login:${ip}`, limit: 10, windowMs: 5 * 60 * 1000 });
+  const limit = rateLimit({ key: `login:${ip}`, limit: 30, windowMs: 5 * 60 * 1000 });
   if (!limit.allowed) {
     return { error: "Zu viele Anmeldeversuche. Bitte in wenigen Minuten erneut versuchen." };
   }

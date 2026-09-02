@@ -84,7 +84,7 @@ export const clientBaseSchema = z.object({
   street: z.string().trim().optional().default(""),
   postalCode: z.string().trim().max(10).optional().default(""),
   city: z.string().trim().optional().default(""),
-  responsibleUserId: z.string().uuid("Bitte zuständigen Mitarbeiter wählen.").nullable().optional(),
+  responsibleUserId: z.string().cuid("Bitte zuständigen Mitarbeiter wählen.").nullable().optional(),
   status: clientStatusEnum.default("ACTIVE"),
 });
 
@@ -137,7 +137,7 @@ export const documentStatusEnum = z.enum([
 ]);
 
 export const documentMetadataSchema = z.object({
-  clientId: z.string().uuid("Bitte Mandanten wählen.").nullable().optional(),
+  clientId: z.string().cuid("Bitte Mandanten wählen.").nullable().optional(),
   category: documentCategoryEnum,
   title: requiredString(2, "Bitte Titel angeben."),
   taxYear: z.coerce.number().int().min(2000).max(2100).nullable().optional(),
@@ -160,7 +160,7 @@ export const documentCommentSchema = z.object({
 export const requestStatusEnum = z.enum(["OPEN", "IN_PROGRESS", "FULFILLED", "CANCELLED"]);
 
 export const documentRequestSchema = z.object({
-  clientId: z.string().uuid("Bitte Mandanten wählen."),
+  clientId: z.string().cuid("Bitte Mandanten wählen."),
   title: requiredString(3, "Bitte Titel angeben."),
   description: z.string().trim().max(2000).optional().default(""),
   dueDate: z.string().optional().default(""),
@@ -193,8 +193,8 @@ export const taskPriorityEnum = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 export const taskSchema = z.object({
   title: requiredString(3, "Bitte Titel angeben."),
   description: z.string().trim().max(4000).optional().default(""),
-  clientId: z.string().uuid().nullable().optional(),
-  assigneeId: z.string().uuid().nullable().optional(),
+  clientId: z.string().cuid().nullable().optional(),
+  assigneeId: z.string().cuid().nullable().optional(),
   priority: taskPriorityEnum.default("MEDIUM"),
   status: taskStatusEnum.default("OPEN"),
   dueDate: z.string().optional().default(""),
@@ -208,27 +208,27 @@ export const deadlineStatusEnum = z.enum(["PLANNED", "IN_PROGRESS", "DONE", "MIS
 
 export const deadlineSchema = z.object({
   title: requiredString(3, "Bitte Titel angeben."),
-  clientId: z.string().uuid().nullable().optional(),
-  assigneeId: z.string().uuid().nullable().optional(),
+  clientId: z.string().cuid().nullable().optional(),
+  assigneeId: z.string().cuid().nullable().optional(),
   dueDate: z.string().min(1, "Bitte Datum angeben."),
   priority: taskPriorityEnum.default("MEDIUM"),
   status: deadlineStatusEnum.default("PLANNED"),
   recurrence: z.enum(["NONE", "MONTHLY", "QUARTERLY", "YEARLY"]).default("NONE"),
   reminderDays: z.coerce.number().int().min(0).max(90).default(7),
   notes: z.string().trim().max(2000).optional().default(""),
-  documentId: z.string().uuid().nullable().optional(),
+  documentId: z.string().cuid().nullable().optional(),
 });
 
 /* ------------------------------- Nachrichten ------------------------------ */
 
 export const messageSchema = z.object({
-  conversationId: z.string().uuid(),
+  conversationId: z.string().cuid(),
   content: requiredString(1, "Bitte Nachricht eingeben."),
   isInternal: z.boolean().default(false),
 });
 
 export const conversationStartSchema = z.object({
-  clientId: z.string().uuid().optional(),
+  clientId: z.string().cuid().optional(),
   subject: requiredString(3, "Bitte Betreff angeben."),
   content: requiredString(1, "Bitte Nachricht eingeben."),
   isInternal: z.boolean().default(false),
@@ -253,12 +253,12 @@ export const appointmentStatusEnum = z.enum([
 ]);
 
 export const appointmentSchema = z.object({
-  clientId: z.string().uuid("Bitte Mandanten wählen."),
+  clientId: z.string().cuid("Bitte Mandanten wählen."),
   type: appointmentTypeEnum.default("GENERAL"),
   title: requiredString(3, "Bitte Titel angeben."),
   startsAt: z.string().min(1, "Bitte Startzeit angeben."),
   durationMinutes: z.coerce.number().int().min(15).max(240).default(30),
-  consultantId: z.string().uuid().nullable().optional(),
+  consultantId: z.string().cuid().nullable().optional(),
   notes: z.string().trim().max(2000).optional().default(""),
 });
 
@@ -273,8 +273,8 @@ export const appointmentBookingSchema = z.object({
 export const approvalStatusEnum = z.enum(["PENDING", "APPROVED", "REJECTED", "CHANGES"]);
 
 export const approvalRequestSchema = z.object({
-  clientId: z.string().uuid("Bitte Mandanten wählen."),
-  documentId: z.string().uuid().nullable().optional(),
+  clientId: z.string().cuid("Bitte Mandanten wählen."),
+  documentId: z.string().cuid().nullable().optional(),
   title: requiredString(3, "Bitte Titel angeben."),
   message: z.string().trim().max(2000).optional().default(""),
   dueDate: z.string().optional().default(""),
@@ -282,7 +282,7 @@ export const approvalRequestSchema = z.object({
 });
 
 export const approvalDecisionSchema = z.object({
-  requestId: z.string().uuid(),
+  requestId: z.string().cuid(),
   decision: z.enum(["APPROVED", "REJECTED", "CHANGES"]),
   comment: z.string().trim().max(2000).optional().default(""),
 });
@@ -290,7 +290,7 @@ export const approvalDecisionSchema = z.object({
 /* -------------------------------- Auswertungen ---------------------------- */
 
 export const reportNoteSchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.string().cuid(),
   title: requiredString(3, "Bitte Titel angeben."),
   content: requiredString(3, "Bitte Text angeben."),
   periodLabel: z.string().trim().max(60).optional().default(""),
@@ -313,14 +313,14 @@ export const onboardingSchema = z.object({
   contactEmail: z.string().trim().optional().default(""),
   taxTypes: z.array(z.string()).default([]),
   requiredDocuments: z.array(z.string()).default([]),
-  responsibleUserId: z.string().uuid().nullable().optional(),
+  responsibleUserId: z.string().cuid().nullable().optional(),
   sendInvite: z.boolean().default(true),
 });
 
 /* ------------------------------- Plattform -------------------------------- */
 
 export const adminOrgActionSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.string().cuid(),
   action: z.enum(["SUSPEND", "ACTIVATE"]),
   reason: z.string().trim().max(500).optional().default(""),
 });

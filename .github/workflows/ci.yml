@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: steuerberaterflow_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/steuerberaterflow_ci
+      AUTH_SECRET: ci-secret-not-used-in-production-0123456789
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit & integration tests
+        run: npm run test
+
+      - name: Apply migrations
+        run: npm run db:migrate --workspace @sf/app
+
+      - name: Seed demo data (verifiziert Seed-Skript)
+        run: npm run db:seed --workspace @sf/app
+
+      - name: Build app
+        run: npm run build:app
+
+      - name: Build landing
+        run: npm run build:landing
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: lint-test-build
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: steuerberaterflow_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/steuerberaterflow_e2e
+      AUTH_SECRET: ci-secret-not-used-in-production-0123456789
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Migrate & seed
+        run: |
+          npm run db:migrate --workspace @sf/app
+          npm run db:seed --workspace @sf/app
+
+      - name: Build app
+        run: npm run build:app
+
+      - name: Run E2E tests
+        run: npx playwright test
+        env:
+          E2E_NO_SERVER: "0"
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7

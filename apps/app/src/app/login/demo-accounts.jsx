@@ -51,6 +51,7 @@ export function DemoAccounts() {
                   variant="secondary"
                   size="sm"
                   disabled={pending}
+                  data-testid={`demo-login-${acc.email}`}
                   onClick={() => {
                     const form = document.getElementById("demo-login-form");
                     if (!form) return;

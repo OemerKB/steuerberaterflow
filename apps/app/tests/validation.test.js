@@ -79,7 +79,7 @@ describe("Fristen-Schema", () => {
 
 describe("Freigabe-Entscheidung", () => {
   it("nur APPROVED/REJECTED/CHANGES erlaubt", () => {
-    expect(approvalDecisionSchema.safeParse({ requestId: "d2f1e3a4-0000-4000-8000-000000000001", decision: "MAYBE" }).success).toBe(false);
-    expect(approvalDecisionSchema.safeParse({ requestId: "d2f1e3a4-0000-4000-8000-000000000001", decision: "APPROVED", comment: "ok" }).success).toBe(true);
+    expect(approvalDecisionSchema.safeParse({ requestId: "cmtjco5ah005906uza6jmo4vw", decision: "MAYBE" }).success).toBe(false);
+    expect(approvalDecisionSchema.safeParse({ requestId: "cmtjco5ah005906uza6jmo4vw", decision: "APPROVED", comment: "ok" }).success).toBe(true);
   });
 });

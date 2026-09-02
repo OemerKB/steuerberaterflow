@@ -43,7 +43,7 @@ export default async function ClientOverviewPage({ params }) {
         take: 3,
       },
       documents: { orderBy: { createdAt: "desc" }, take: 5, select: { id: true, title: true, createdAt: true } },
-      auditLogs: { orderBy: { createdAt: "desc" }, take: 8 },
+
     },
   });
   if (!client) notFound();
