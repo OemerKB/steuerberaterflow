@@ -7,7 +7,7 @@ const compat = new FlatCompat({
 });
 
 export default [
-  { ignores: [".next/**", "src/generated/**", "node_modules/**", "prisma/migrations/**"] },
+  { ignores: [".next/**", ".vercel/**", "src/generated/**", "node_modules/**", "prisma/migrations/**"] },
   ...compat.extends("next/core-web-vitals"),
   {
     rules: {
