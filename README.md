@@ -172,6 +172,10 @@ Sicherheitshinweis: Diese Konten sind ausschließlich für Demo-Umgebungen gedac
 - **Storage-Adapter `db`** speichert Dateien (max. 10 MB) in PostgreSQL – ideal für Demo/MVP; für große Volumina ist ein Objekt-Storage-Treiber vorbereitet (siehe `docs/integrations.md`).
 - **GoBD/DSGVO:** Die Plattform ist technisch darauf vorbereitet (Audit-Log, Tenant-Isolation, Lösch-/Export-Konzepte dokumentiert), ersetzt aber keine rechtliche Prüfung. Es werden bewusst keine Aussagen wie „GoBD-konform" oder „rechtssicher" getroffen.
 - **Zwei-Faktor-Authentifizierung** ist vorbereitet (dokumentiert), im MVP noch nicht aktiv.
+- **GitHub Actions**: Workflows sind vollständig konfiguriert und identisch zur lokalen Verifikation
+  (Lint, Tests, Migration, Seed, Builds, E2E). Die Ausführung scheitert aktuell an einer
+  Konto-Sperre („account is locked due to a billing issue“) – nach Klärung unter
+  github.com/settings/billing läuft die Pipeline ohne Änderungen.
 
 ---
 
