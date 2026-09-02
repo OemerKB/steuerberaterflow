@@ -1,0 +1,30 @@
+{
+  "name": "steuerberaterflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Digitale Zusammenarbeitsebene zwischen Steuerkanzleien und ihren Mandanten.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev:app": "npm run dev --workspace @sf/app",
+    "dev:landing": "npm run dev --workspace @sf/landing",
+    "build": "npm run build --workspaces --if-present",
+    "build:app": "npm run build --workspace @sf/app",
+    "build:landing": "npm run build --workspace @sf/landing",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npx playwright test",
+    "db:migrate": "npm run db:migrate --workspace @sf/app",
+    "db:seed": "npm run db:seed --workspace @sf/app",
+    "db:studio": "npm run db:studio --workspace @sf/app"
+  },
+  "devDependencies": {
+    "eslint": "9.34.0",
+    "@playwright/test": "1.56.1"
+  }
+}

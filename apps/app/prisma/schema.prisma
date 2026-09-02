@@ -1,0 +1,777 @@
+// SteuerberaterFlow – Datenmodell
+// Alle tenantbezogenen Modelle tragen organizationId (Tenant-Isolation auf DB-Ebene).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================== Enums =====================================
+
+enum OrgStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum PlanType {
+  SOLO
+  KANZLEI
+  PRO
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+enum Role {
+  OWNER
+  STAFF
+  ACCOUNTANT
+  CLIENT
+}
+
+enum ClientType {
+  INDIVIDUAL
+  SOLE_TRADER
+  FREELANCER
+  GMBH
+  UG
+  ASSOCIATION
+  LANDLORD
+  PRIVATE
+}
+
+enum ClientStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum DocumentCategory {
+  INVOICE_IN
+  INVOICE_OUT
+  BANK
+  CASH
+  CONTRACT
+  TAX_ASSESSMENT
+  BWA
+  ANNUAL_STATEMENT
+  PAYROLL
+  PERSONNEL
+  POWER_OF_ATTORNEY
+  OTHER
+}
+
+enum DocumentStatus {
+  NEW
+  ANALYZING
+  REVIEW
+  QUESTION
+  ACCEPTED
+  REJECTED
+  ARCHIVED
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  FULFILLED
+  CANCELLED
+}
+
+enum RequestItemStatus {
+  MISSING
+  UPLOADED
+  ACCEPTED
+  WAIVED
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CLIENT
+  WAITING_FIRM
+  DONE
+  ARCHIVED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum DeadlineStatus {
+  PLANNED
+  IN_PROGRESS
+  DONE
+  MISSED
+}
+
+enum Recurrence {
+  NONE
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum ConversationType {
+  CLIENT
+  INTERNAL
+}
+
+enum AppointmentType {
+  INITIAL
+  FOLLOW_UP
+  BWA_REVIEW
+  ANNUAL_STATEMENT
+  TAX_ASSESSMENT
+  GENERAL
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum ApprovalKind {
+  DOCUMENT
+  REPORT
+  GENERAL
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHANGES
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum ReportKind {
+  SUMMARY
+  BWA_NOTE
+  TAX_NOTE
+  CUSTOM
+}
+
+// ============================== Organisation ===============================
+
+model Organization {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  status    OrgStatus @default(ACTIVE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  settings       OrganizationSettings?
+  memberships    Membership[]
+  clients        Client[]
+  documents      Document[]
+  documentRequests DocumentRequest[]
+  tasks          Task[]
+  deadlines      Deadline[]
+  conversations  Conversation[]
+  appointments   Appointment[]
+  approvals      ApprovalRequest[]
+  reports        Report[]
+  invitations    Invitation[]
+  auditLogs      AuditLog[]
+  subscriptions  Subscription[]
+  meetingRooms   MeetingRoom[]
+
+  @@index([status])
+}
+
+model OrganizationSettings {
+  id            String  @id @default(cuid())
+  organizationId String @unique
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  street        String  @default("")
+  postalCode    String  @default("")
+  city          String  @default("")
+  phone         String  @default("")
+  email         String  @default("")
+  website       String  @default("")
+  timezone      String  @default("Europe/Berlin")
+  locale        String  @default("de-DE")
+  logoUrl       String? 
+  primaryColor  String  @default("#176B4D")
+  emailFromName String  @default("")
+  aiEnabled     Boolean @default(false)
+  aiSummaryEnabled Boolean @default(false)
+  documentCategories String @default("")
+  notificationPrefs  Json   @default("{}")
+  updatedAt     DateTime @updatedAt
+}
+
+// ============================== Benutzer & Rollen ==========================
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String
+  passwordHash     String
+  isPlatformAdmin  Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  memberships   Membership[]
+  sessions      Session[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  invitedBy     Invitation[]   @relation("InvitedBy")
+  assignedTasks Task[]         @relation("TaskAssignee")
+  createdTasks  Task[]         @relation("TaskCreator")
+  assignedDeadlines Deadline[] @relation("DeadlineAssignee")
+  uploadedDocuments Document[] @relation("DocumentUploader")
+  uploadedVersions  DocumentVersion[]
+  messages       Message[]
+  appointments   Appointment[]  @relation("AppointmentConsultant")
+  approvalDecisions ApprovalDecision[]
+  requestedApprovals ApprovalRequest[]
+  messageReads   MessageRead[]
+  notes          ClientNote[]
+  documentComments DocumentComment[]
+  clientPortal   Client?       @relation("ClientPortalUser")
+  responsibleClients Client[]  @relation("ClientResponsible")
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role
+  title          String   @default("")
+  createdAt      DateTime @default(now())
+
+  clientAssignments ClientAssignment[]
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId, role])
+}
+
+/// Berechtigungskatalog (Referenz/Dokumentation; Laufzeit-Matrix in lib/permissions.mjs)
+model Permission {
+  id   String @id @default(cuid())
+  key  String @unique
+  description String
+  roles RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role
+  @@unique([permissionId, role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  userAgent String  @default("")
+  ip        String  @default("")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+model Invitation {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  name           String
+  role           Role
+  clientId       String?
+  token          String    @unique
+  status         InvitationStatus @default(PENDING)
+  invitedById    String?
+  invitedBy      User?     @relation("InvitedBy", fields: [invitedById], references: [id])
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  @@index([organizationId])
+  @@index([email])
+}
+
+// ============================== Mandanten ==================================
+
+model Client {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type           ClientType
+  name           String
+  company        String  @default("")
+  taxNumber      String  @default("")
+  vatId          String  @default("")
+  email          String  @default("")
+  phone          String  @default("")
+  street         String  @default("")
+  postalCode     String  @default("")
+  city           String  @default("")
+  status         ClientStatus @default(ACTIVE)
+  taxTypes       String[] @default([])
+  responsibleUserId String?
+  responsible    User?    @relation("ClientResponsible", fields: [responsibleUserId], references: [id])
+  portalUserId   String?  @unique
+  portalUser     User?    @relation("ClientPortalUser", fields: [portalUserId], references: [id])
+  onboardingPercent Int   @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  documents      Document[]
+  documentRequests DocumentRequest[]
+  tasks          Task[]
+  deadlines      Deadline[]
+  conversations  Conversation[]
+  appointments   Appointment[]
+  approvals      ApprovalRequest[]
+  reports        Report[]
+  notes          ClientNote[]
+  contacts       ClientContact[]
+  assignments    ClientAssignment[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, name])
+  @@index([responsibleUserId])
+}
+
+model ClientContact {
+  id       String  @id @default(cuid())
+  clientId String
+  client   Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name     String
+  role     String  @default("")
+  email    String  @default("")
+  phone    String  @default("")
+  isPrimary Boolean @default(false)
+  createdAt DateTime @default(now())
+  @@index([clientId])
+}
+
+model ClientAssignment {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId   String
+  user     Membership @relation(fields: [userId], references: [id], onDelete: Cascade)
+  function String @default("")
+  @@unique([clientId, userId])
+}
+
+model ClientNote {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  content   String
+  isInternal Boolean @default(true)
+  createdAt DateTime @default(now())
+  @@index([clientId])
+}
+
+// ============================== Dokumente ==================================
+
+model Document {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String?
+  client         Client?   @relation(fields: [clientId], references: [id])
+  category       DocumentCategory
+  title          String
+  description    String  @default("")
+  status         DocumentStatus @default(NEW)
+  taxYear        Int?
+  month          Int?
+  tags           String[] @default([])
+  uploadedById   String?
+  uploadedBy     User?   @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  currentVersion Int     @default(1)
+  isAiAnalyzed   Boolean @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  versions     DocumentVersion[]
+  comments     DocumentComment[]
+  requestItems RequestItem[]
+  approvals    ApprovalRequest[]
+  deadlines    Deadline[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, category])
+  @@index([clientId])
+  @@index([createdAt])
+}
+
+model DocumentVersion {
+  id          String   @id @default(cuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version     Int
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  checksum    String
+  data        Bytes
+  uploadedById String?
+  uploadedBy  User?    @relation(fields: [uploadedById], references: [id])
+  createdAt   DateTime @default(now())
+  @@unique([documentId, version])
+}
+
+model DocumentComment {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content    String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  @@index([documentId])
+}
+
+model DocumentRequest {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title          String
+  description    String    @default("")
+  periodLabel    String    @default("")
+  dueDate        DateTime?
+  status         RequestStatus @default(OPEN)
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  items RequestItem[]
+  @@index([organizationId, status])
+  @@index([clientId])
+}
+
+model RequestItem {
+  id         String    @id @default(cuid())
+  requestId  String
+  request    DocumentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  title      String
+  dueDate    DateTime?
+  status     RequestItemStatus @default(MISSING)
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id])
+  comment    String    @default("")
+  remindedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  @@index([requestId])
+  @@index([status])
+}
+
+// ============================== Aufgaben & Fristen =========================
+
+model Task {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String   @default("")
+  clientId       String?
+  client         Client?  @relation(fields: [clientId], references: [id])
+  assigneeId     String?
+  assignee       User?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creatorId      String?
+  creator        User?    @relation("TaskCreator", fields: [creatorId], references: [id])
+  priority       TaskPriority @default(MEDIUM)
+  status         TaskStatus   @default(OPEN)
+  dueDate        DateTime?
+  tags           String[] @default([])
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  checklist TaskChecklistItem[]
+  @@index([organizationId, status])
+  @@index([assigneeId, status])
+  @@index([clientId])
+  @@index([dueDate])
+}
+
+model TaskChecklistItem {
+  id        String  @id @default(cuid())
+  taskId    String
+  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  text      String
+  done      Boolean @default(false)
+  position  Int     @default(0)
+  @@index([taskId])
+}
+
+model Deadline {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  clientId       String?
+  client         Client?      @relation(fields: [clientId], references: [id])
+  assigneeId     String?
+  assignee       User?        @relation("DeadlineAssignee", fields: [assigneeId], references: [id])
+  dueDate        DateTime
+  priority       TaskPriority @default(MEDIUM)
+  status         DeadlineStatus @default(PLANNED)
+  recurrence     Recurrence   @default(NONE)
+  reminderDays   Int          @default(7)
+  notes          String       @default("")
+  documentId     String?
+  document       Document?    @relation(fields: [documentId], references: [id])
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  @@index([organizationId, dueDate])
+  @@index([status])
+  @@index([clientId])
+}
+
+// ============================== Nachrichten ================================
+
+model Conversation {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String?
+  client         Client?          @relation(fields: [clientId], references: [id])
+  type           ConversationType @default(CLIENT)
+  subject        String
+  createdById    String?
+  archivedAt     DateTime?
+  lastMessageAt  DateTime         @default(now())
+  createdAt      DateTime         @default(now())
+
+  messages Message[]
+  reads    MessageRead[]
+  @@index([organizationId, clientId])
+  @@index([organizationId, type])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String?
+  sender         User?        @relation(fields: [senderId], references: [id])
+  authorName     String       @default("")
+  content        String
+  isInternal     Boolean      @default(false)
+  isSystem       Boolean      @default(false)
+  attachments    Json         @default("[]")
+  createdAt      DateTime     @default(now())
+  @@index([conversationId, createdAt])
+}
+
+model MessageRead {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime     @default(now())
+  @@unique([conversationId, userId])
+}
+
+// ============================== Termine & Meetings =========================
+
+model Appointment {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type           AppointmentType   @default(GENERAL)
+  title          String
+  startsAt       DateTime
+  durationMinutes Int              @default(30)
+  consultantId   String?
+  consultant     User?             @relation("AppointmentConsultant", fields: [consultantId], references: [id])
+  status         AppointmentStatus @default(CONFIRMED)
+  notes          String            @default("")
+  followUp       String            @default("")
+  meetingRoomId  String?
+  meetingRoom    MeetingRoom?      @relation(fields: [meetingRoomId], references: [id])
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  @@index([organizationId, startsAt])
+  @@index([clientId])
+  @@index([consultantId])
+}
+
+model MeetingRoom {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider       String       @default("demo")
+  externalId     String       @default("")
+  url            String       @default("")
+  isDemo         Boolean      @default(true)
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  appointments   Appointment[]
+  @@index([organizationId])
+}
+
+// ============================== Freigaben ==================================
+
+model ApprovalRequest {
+  id             String               @id @default(cuid())
+  organizationId String
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  documentId     String?
+  document       Document?            @relation(fields: [documentId], references: [id])
+  kind           ApprovalKind         @default(DOCUMENT)
+  title          String
+  message        String               @default("")
+  dueDate        DateTime?
+  status         ApprovalRequestStatus @default(PENDING)
+  requestedById  String?
+  requestedBy    User?                @relation(fields: [requestedById], references: [id])
+  decidedAt      DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  decisions ApprovalDecision[]
+  @@index([organizationId, status])
+  @@index([clientId])
+}
+
+model ApprovalDecision {
+  id             String       @id @default(cuid())
+  requestId      String
+  request        ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  decidedById    String
+  decidedBy      User         @relation(fields: [decidedById], references: [id], onDelete: Cascade)
+  decision       ApprovalRequestStatus
+  comment        String       @default("")
+  createdAt      DateTime     @default(now())
+  @@index([requestId])
+}
+
+// ============================== Auswertungen ===============================
+
+model Report {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  kind           ReportKind @default(SUMMARY)
+  title          String
+  content        String    @default("")
+  periodLabel    String    @default("")
+  data           Json      @default("{}")
+  isDemoData     Boolean   @default(false)
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  @@index([organizationId, clientId])
+  @@index([createdAt])
+}
+
+// ============================== System =====================================
+
+model Notification {
+  id         String    @id @default(cuid())
+  organizationId String?
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String
+  title      String
+  body       String    @default("")
+  entityType String    @default("")
+  entityId   String    @default("")
+  link       String    @default("")
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  @@index([userId, readAt])
+}
+
+model AuditLog {
+  id             String    @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  actorId        String?
+  actor          User?     @relation(fields: [actorId], references: [id])
+  actorName      String    @default("")
+  action         String
+  entityType     String    @default("")
+  entityId       String    @default("")
+  metadata       Json      @default("{}")
+  ip             String    @default("")
+  createdAt      DateTime  @default(now())
+  @@index([organizationId, createdAt])
+  @@index([actorId])
+  @@index([action])
+}
+
+model Subscription {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan           PlanType @default(SOLO)
+  status         SubscriptionStatus @default(TRIALING)
+  stripeCustomerId String @default("")
+  seats          Int      @default(1)
+  currentPeriodEnd DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  @@index([organizationId])
+}
+
+model FeatureFlag {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  description String  @default("")
+  enabled     Boolean @default(false)
+  updatedAt   DateTime @updatedAt
+}
+
+model SupportCase {
+  id          String    @id @default(cuid())
+  organizationId String?
+  subject     String
+  status      String    @default("OPEN")
+  message     String    @default("")
+  handledBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

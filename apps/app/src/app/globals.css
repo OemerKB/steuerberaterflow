@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@import "@steuerberaterflow/config/theme.css";
+@import "@steuerberaterflow/ui/styles.css";
+@source "../../../../packages/ui/src";
+@source "../";
+
+::selection {
+  background: #dcebdd;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Feine Scrollbars für Tabellen/Listen */
+.sf-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.sf-scroll::-webkit-scrollbar-thumb {
+  background: #d7ddd8;
+  border-radius: 4px;
+}

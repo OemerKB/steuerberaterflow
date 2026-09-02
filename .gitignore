@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Builds
+dist/
+build/
+
+# Environment – niemals Secrets committen
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Prisma
+apps/app/src/generated/
+
+# Testing
+playwright-report/
+test-results/
+coverage/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads (lokale Entwicklung)
+data/uploads/
+
+# Vercel
+.vercel/
