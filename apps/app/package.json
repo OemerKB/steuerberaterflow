@@ -23,9 +23,9 @@
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
     "@prisma/client": "6.19.3",
-    "@steuerberaterflow/config": "*",
-    "@steuerberaterflow/ui": "*",
-    "@steuerberaterflow/validation": "*",
+    "@steuerberaterflow/config": "file:../../packages/config",
+    "@steuerberaterflow/ui": "file:../../packages/ui",
+    "@steuerberaterflow/validation": "file:../../packages/validation",
     "@tanstack/react-table": "^8.21.3",
     "date-fns": "^4.1.0",
     "lucide-react": "^1.39.0",
