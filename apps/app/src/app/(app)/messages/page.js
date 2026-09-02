@@ -41,9 +41,9 @@ export default async function MessagesPage({ searchParams }) {
       />
 
       <div className="flex gap-2">
-        <a href="/messages" className={`h-8 px-3 inline-flex items-center rounded-lg border text-xs font-medium ${!type ? "bg-accent text-accent-foreground border-accent" : "border-border bg-card hover:bg-accent/40"}`}>Alle</a>
-        <a href="/messages?type=client" className={`h-8 px-3 inline-flex items-center rounded-lg border text-xs font-medium ${type === "CLIENT" ? "bg-accent text-accent-foreground border-accent" : "border-border bg-card hover:bg-accent/40"}`}>Mandanten</a>
-        <a href="/messages?type=internal" className={`h-8 px-3 inline-flex items-center rounded-lg border text-xs font-medium ${type === "INTERNAL" ? "bg-accent text-accent-foreground border-accent" : "border-border bg-card hover:bg-accent/40"}`}>Interne Notizen</a>
+        <Link href="/messages" className={`h-8 px-3 inline-flex items-center rounded-lg border text-xs font-medium ${!type ? "bg-accent text-accent-foreground border-accent" : "border-border bg-card hover:bg-accent/40"}`}>Alle</Link>
+        <Link href="/messages?type=client" className={`h-8 px-3 inline-flex items-center rounded-lg border text-xs font-medium ${type === "CLIENT" ? "bg-accent text-accent-foreground border-accent" : "border-border bg-card hover:bg-accent/40"}`}>Mandanten</Link>
+        <Link href="/messages?type=internal" className={`h-8 px-3 inline-flex items-center rounded-lg border text-xs font-medium ${type === "INTERNAL" ? "bg-accent text-accent-foreground border-accent" : "border-border bg-card hover:bg-accent/40"}`}>Interne Notizen</Link>
       </div>
 
       <Card>

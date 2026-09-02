@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireFirmContext } from "@/lib/context";
 import { can } from "@/lib/permissions";
@@ -64,7 +65,7 @@ export default async function DocumentsPage({ searchParams }) {
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <button type="submit" className="h-9 px-3 rounded-lg bg-primary text-white text-sm hover:bg-primary-hover">Filtern</button>
-            <a href="/documents" className="h-9 px-3 rounded-lg border border-border text-sm leading-9 hover:bg-accent/50">Zurücksetzen</a>
+            <Link href="/documents" className="h-9 px-3 rounded-lg border border-border text-sm leading-9 hover:bg-accent/50">Zurücksetzen</Link>
           </form>
           <DocumentsTable documents={rows} showClient />
         </CardContent>

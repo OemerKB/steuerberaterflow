@@ -52,7 +52,7 @@ export default async function ClientApprovalsPage({ params }) {
                 </p>
               </div>
               <Badge tone={APPROVAL_STATUS_TONES[a.status]}>{APPROVAL_STATUS_LABELS[a.status]}</Badge>
-              {a.decisions[0]?.comment ? <span className="text-xs text-muted">„{a.decisions[0].comment}"</span> : null}
+              {a.decisions[0]?.comment ? <span className="text-xs text-muted">&bdquo;{a.decisions[0].comment}&ldquo;</span> : null}
             </div>
           ))
         )}

@@ -75,7 +75,7 @@ export default async function ApprovalsPage({ searchParams }) {
                 </div>
                 <Badge tone={APPROVAL_STATUS_TONES[a.status]}>{APPROVAL_STATUS_LABELS[a.status]}</Badge>
                 {a.decisions[0] ? (
-                  <span className="text-xs text-muted max-w-48 truncate">„{a.decisions[0].comment || "ohne Kommentar"}"</span>
+                  <span className="text-xs text-muted max-w-48 truncate">&bdquo;{a.decisions[0].comment || "ohne Kommentar"}&ldquo;</span>
                 ) : null}
               </div>
             ))
