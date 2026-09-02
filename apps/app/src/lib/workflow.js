@@ -122,6 +122,11 @@ export function validateUpload({ fileName, mimeType, sizeBytes, maxBytes, allowe
   if (mimeType && allowedMimeTypes && !allowedMimeTypes.includes(mimeType)) {
     errors.push(`Dateiformat „${mimeType}" ist nicht erlaubt.`);
   }
+  // Tarnungs-Schutz: bekannte Extension und bekannter MIME-Typ müssen zusammenpassen
+  const expectedMime = EXT_TO_MIME[ext];
+  if (expectedMime && mimeType && expectedMime !== mimeType) {
+    errors.push("Dateiendung und Dateiformat passen nicht zusammen.");
+  }
   if (!sizeBytes || sizeBytes <= 0) errors.push("Die Datei ist leer.");
   if (sizeBytes > maxBytes) {
     errors.push(`Die Datei ist zu groß (max. ${Math.round(maxBytes / (1024 * 1024))} MB).`);
